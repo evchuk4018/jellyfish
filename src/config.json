@@ -30,6 +30,11 @@
     }
   ],
   "menuLinks": [],
+  "seerr": {
+    "enabled": true,
+    "name": "Requests",
+    "url": "/seerr/"
+  },
   "servers": [],
   "plugins": [
     "playAccessValidation/plugin",
