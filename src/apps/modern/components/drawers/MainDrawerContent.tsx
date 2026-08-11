@@ -1,3 +1,4 @@
+import AddCircleOutline from '@mui/icons-material/AddCircleOutline';
 import Favorite from '@mui/icons-material/Favorite';
 import Home from '@mui/icons-material/Home';
 import Divider from '@mui/material/Divider';
@@ -53,6 +54,19 @@ const MainDrawerContent = () => {
                         <ListItemText primary={globalize.translate('Favorites')} />
                     </ListItemLink>
                 </ListItem>
+                {webConfig.seerr?.enabled && (
+                    <ListItem disablePadding>
+                        <ListItemLink
+                            to='/requests'
+                            selected={location.pathname === '/requests'}
+                        >
+                            <ListItemIcon>
+                                <AddCircleOutline />
+                            </ListItemIcon>
+                            <ListItemText primary={webConfig.seerr.name || 'Requests'} />
+                        </ListItemLink>
+                    </ListItem>
+                )}
             </List>
 
             {/* CUSTOM LINKS */}
