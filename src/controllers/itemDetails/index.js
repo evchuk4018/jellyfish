@@ -19,6 +19,7 @@ import layoutManager from 'components/layoutManager';
 import listView from 'components/listview/listview';
 import loading from 'components/loading/loading';
 import { playbackManager } from 'components/playback/playbackmanager';
+import { logPlayback, summarizePlaybackError } from 'components/playback/playbackDebug';
 import { appRouter } from 'components/router/appRouter';
 import itemShortcuts from 'components/shortcuts';
 import { AppFeature } from 'constants/appFeature';
@@ -1962,7 +1963,7 @@ export default function (view, params) {
     function playItem(item, startPosition) {
         const playOptions = getPlayOptions(startPosition);
         playOptions.items = [item];
-        playbackManager.play(playOptions);
+        return playbackManager.play(playOptions);
     }
 
     function playTrailer() {
@@ -1982,7 +1983,7 @@ export default function (view, params) {
             return;
         }
 
-        playItem(item, item.UserData && mode === 'resume' ? item.UserData.PlaybackPositionTicks : 0);
+        return playItem(item, item.UserData && mode === 'resume' ? item.UserData.PlaybackPositionTicks : 0);
     }
 
     function onPlayClick() {
@@ -1994,7 +1995,13 @@ export default function (view, params) {
             action = actionElem.getAttribute('data-action');
         }
 
-        playCurrentItem(actionElem, action);
+        Promise.resolve(playCurrentItem(actionElem, action)).catch(error => {
+            logPlayback('error', 'Playback invocation failed', {
+                itemId: currentItem?.Id,
+                itemName: currentItem?.Name,
+                error: summarizePlaybackError(error)
+            });
+        });
     }
 
     function onInstantMixClick() {

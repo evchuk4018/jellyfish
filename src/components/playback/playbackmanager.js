@@ -2159,12 +2159,27 @@ export class PlaybackManager {
         self.play = async function (options) {
             normalizePlayOptions(options);
 
+            logPlayback('info', 'Playback requested', {
+                itemIds: (options.items || []).map(item => item.Id),
+                itemNames: (options.items || []).map(item => item.Name),
+                fullscreen: options.fullscreen,
+                mediaSourceId: options.mediaSourceId || null,
+                currentPlayer: self._currentPlayer ? {
+                    name: self._currentPlayer.name,
+                    isLocalPlayer: self._currentPlayer.isLocalPlayer
+                } : null
+            });
+
             if (self._currentPlayer) {
                 if (options.enableRemotePlayers === false && !self._currentPlayer.isLocalPlayer) {
                     throw new Error('Remote players are disabled');
                 }
 
                 if (!self._currentPlayer.isLocalPlayer) {
+                    logPlayback('info', 'Delegating playback to active remote player', {
+                        playerName: self._currentPlayer.name,
+                        itemIds: (options.items || []).map(item => item.Id)
+                    });
                     return self._currentPlayer.play(options);
                 }
             }
@@ -2446,8 +2461,14 @@ export class PlaybackManager {
                 .catch(onInterceptorRejection)
                 .then(() => detectBitrate(apiClient, item, mediaType))
                 .then((bitrate) => {
+                    logPlayback('info', 'Playback bitrate detected', {
+                        itemId: item.Id,
+                        itemName: item.Name,
+                        bitrate
+                    });
+
                     return playAfterBitrateDetect(bitrate, item, playOptions, onPlaybackStartedFn, prevSource)
-                        .catch(onPlaybackRejection);
+                        .catch(error => onPlaybackRejection(error, item));
                 })
                 .catch(() => {
                     if (playOptions.fullscreen) {
@@ -2473,7 +2494,13 @@ export class PlaybackManager {
             return Promise.reject();
         }
 
-        function onPlaybackRejection(e) {
+        function onPlaybackRejection(e, item) {
+            logPlayback('error', 'Playback preparation failed', {
+                itemId: item?.Id,
+                itemName: item?.Name,
+                error: summarizePlaybackError(e)
+            });
+
             cancelPlayback();
 
             let displayErrorCode = 'ErrorDefault';
@@ -2674,6 +2701,13 @@ export class PlaybackManager {
             const player = getPlayer(item, playOptions);
             const activePlayer = self._currentPlayer;
 
+            logPlayback('info', 'Local player selected', {
+                itemId: item.Id,
+                itemName: item.Name,
+                playerName: player?.name || null,
+                activePlayerName: activePlayer?.name || null
+            });
+
             let promise;
 
             if (activePlayer) {
@@ -2714,12 +2748,27 @@ export class PlaybackManager {
 
             const apiClient = ServerConnections.getApiClient(item.ServerId);
             const isLiveTv = [BaseItemKind.TvChannel, BaseItemKind.LiveTvChannel].includes(item.Type);
-            const getMediaStreams = isLiveTv ? Promise.resolve([]) : apiClient.getItem(apiClient.getCurrentUserId(), mediaSourceId || item.Id)
-                .then(fullItem => {
-                    return fullItem.MediaStreams;
+            const logPreparationFailure = (stage, error) => {
+                logPlayback('error', 'Playback preflight failed', {
+                    stage,
+                    itemId: item.Id,
+                    itemName: item.Name,
+                    error: summarizePlaybackError(error)
                 });
+                throw error;
+            };
+            const deviceProfilePromise = Promise.resolve()
+                .then(() => player.getDeviceProfile(item))
+                .catch(error => logPreparationFailure('device-profile', error));
+            const currentUserPromise = Promise.resolve()
+                .then(() => apiClient.getCurrentUser())
+                .catch(error => logPreparationFailure('current-user', error));
+            const getMediaStreams = Promise.resolve()
+                .then(() => isLiveTv ? [] : apiClient.getItem(apiClient.getCurrentUserId(), mediaSourceId || item.Id)
+                    .then(fullItem => fullItem.MediaStreams))
+                .catch(error => logPreparationFailure('media-streams', error));
 
-            return Promise.all([promise, player.getDeviceProfile(item), apiClient.getCurrentUser(), getMediaStreams]).then(function (responses) {
+            return Promise.all([promise, deviceProfilePromise, currentUserPromise, getMediaStreams]).then(function (responses) {
                 const deviceProfile = responses[1];
                 const user = responses[2];
                 const mediaStreams = responses[3];

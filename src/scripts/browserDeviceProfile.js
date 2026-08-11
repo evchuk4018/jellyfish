@@ -1,4 +1,5 @@
 import browser from './browser';
+import { supportsHevcInFmp4Hls } from './browserMediaCapabilities';
 import appSettings from './settings/appSettings';
 import * as userSettings from './settings/userSettings';
 
@@ -421,9 +422,23 @@ function getSpeakerCount() {
     const AudioContext = window.AudioContext || window.webkitAudioContext || false; /* eslint-disable-line compat/compat */
 
     if (AudioContext) {
-        const audioCtx = new AudioContext();
+        let audioCtx;
 
-        maxChannelCount = audioCtx.destination.maxChannelCount;
+        try {
+            audioCtx = new AudioContext();
+            maxChannelCount = audioCtx.destination.maxChannelCount;
+        } catch (error) {
+            // AudioContext capability probing can be blocked by browser privacy
+            // settings. Falling back to the codec-derived channel count is safer
+            // than aborting video playback before PlaybackInfo is requested.
+            console.warn('[browserDeviceProfile] Unable to detect speaker count', error);
+        } finally {
+            if (audioCtx?.close) {
+                audioCtx.close().catch(() => {
+                    // The context was created only for capability detection.
+                });
+            }
+        }
     }
 
     return maxChannelCount;
@@ -665,8 +680,7 @@ export default function (options) {
         hlsInFmp4VideoCodecs.push('av1');
     }
 
-    if (canPlayHevc(videoTestElement, options)
-        && (browser.edgeChromium || browser.safari || browser.tizen || browser.web0s || (browser.chrome && (!browser.android || browser.versionMajor >= 105)) || (browser.opera && !browser.mobile) || (browser.firefox && browser.versionMajor >= 134))) {
+    if (canPlayHevc(videoTestElement, options) && supportsHevcInFmp4Hls(browser)) {
         // Chromium used to support HEVC on Android but not via MSE
         hlsInFmp4VideoCodecs.push('hevc');
     }
