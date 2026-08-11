@@ -25,6 +25,31 @@ import { getConfigurationApi } from '@jellyfin/sdk/lib/utils/api/configuration-a
 import { queryClient } from 'utils/query/queryClient';
 import { ActionData } from 'types/actionData';
 
+/* eslint-disable sonarjs/no-clear-text-protocols -- Private homelab services intentionally use HTTP. */
+const MEDIA_STACK_LINKS = [
+    {
+        label: 'Jellyseerr (request media)',
+        href: 'http://homelab.tail861ffd.ts.net:5055'
+    },
+    {
+        label: 'Prowlarr (add torrent/indexer providers)',
+        href: 'http://homelab.tail861ffd.ts.net:9696'
+    },
+    {
+        label: 'qBittorrent (downloads)',
+        href: 'http://homelab.tail861ffd.ts.net:8080'
+    },
+    {
+        label: 'Radarr (movies)',
+        href: 'http://homelab.tail861ffd.ts.net:7878'
+    },
+    {
+        label: 'Sonarr (TV)',
+        href: 'http://homelab.tail861ffd.ts.net:8989'
+    }
+] as const;
+/* eslint-enable sonarjs/no-clear-text-protocols */
+
 export const action = async ({ request }: ActionFunctionArgs) => {
     const api = ServerConnections.getCurrentApi();
     if (!api) throw new Error('No Api instance available');
@@ -256,6 +281,21 @@ export const Component = () => {
                                     }
                                 }}
                             />
+
+                            <Typography variant='h2'>{globalize.translate('HeaderMediaStack')}</Typography>
+
+                            <Stack spacing={1}>
+                                {MEDIA_STACK_LINKS.map(({ label, href }) => (
+                                    <Link
+                                        key={href}
+                                        href={href}
+                                        target='_blank'
+                                        rel='noopener noreferrer'
+                                    >
+                                        {label}
+                                    </Link>
+                                ))}
+                            </Stack>
 
                             <Button type='submit' size='large'>
                                 {globalize.translate('Save')}
