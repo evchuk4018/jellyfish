@@ -7,6 +7,8 @@ export const ASYNC_USER_ROUTES: AsyncRoute[] = [
     { path: 'livetv', type: AppType.Experimental },
     { path: 'movies', type: AppType.Experimental },
     { path: 'music', type: AppType.Experimental },
+    { path: 'discover', type: AppType.Experimental },
+    { path: 'requests', type: AppType.Experimental },
     { path: 'mypreferencesdisplay', page: 'user/display', type: AppType.Experimental },
     { path: 'mypreferencesmenu', page: 'user/settings' },
     { path: 'quickconnect', page: 'quickConnect' },

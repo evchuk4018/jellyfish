@@ -14,6 +14,7 @@ interface MenuLink {
 export interface WebConfig {
     includeCorsCredentials?: boolean
     multiserver?: boolean
+    seerrBridgeUrl?: string
     themes?: Theme[]
     menuLinks?: MenuLink[]
     servers?: string[]
