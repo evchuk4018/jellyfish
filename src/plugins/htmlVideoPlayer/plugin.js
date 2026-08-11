@@ -40,6 +40,7 @@ import globalize from '../../lib/globalize';
 import profileBuilder, { canPlaySecondaryAudio } from '../../scripts/browserDeviceProfile';
 import { getIncludeCorsCredentials } from '../../scripts/settings/webSettings';
 import { setBackdropTransparency, TRANSPARENCY_LEVEL } from '../../components/backdrop/backdrop';
+import { logPlayback, sanitizePlaybackUrl, summarizeMediaElement, summarizePlaybackError } from '../../components/playback/playbackDebug';
 import { PluginType } from '../../types/plugin.ts';
 import Events from '../../utils/events.ts';
 import { includesAny } from '../../utils/container.ts';
@@ -482,7 +483,18 @@ export class HtmlVideoPlayer {
         elem.removeEventListener('error', this.onError);
 
         let val = options.url;
-        console.debug(`playing url: ${val}`);
+        logPlayback('info', 'Assigning native media source', {
+            url: sanitizePlaybackUrl(val),
+            playMethod: options.playMethod,
+            mimeType: options.mimeType,
+            mediaSource: {
+                id: options.mediaSource?.Id,
+                container: options.mediaSource?.Container,
+                supportsDirectPlay: options.mediaSource?.SupportsDirectPlay,
+                supportsDirectStream: options.mediaSource?.SupportsDirectStream,
+                supportsTranscoding: options.mediaSource?.SupportsTranscoding
+            }
+        });
 
         // Convert to seconds
         const seconds = (options.playerStartPositionTicks || 0) / 10000000;
@@ -864,6 +876,7 @@ export class HtmlVideoPlayer {
             this.destroyCustomTrack(videoElement);
             videoElement.removeEventListener('timeupdate', this.onTimeUpdate);
             videoElement.removeEventListener('ended', this.onEnded);
+            videoElement.removeEventListener('loadedmetadata', this.onLoadedMetadata);
             videoElement.removeEventListener('volumechange', this.onVolumeChange);
             videoElement.removeEventListener('pause', this.onPause);
             videoElement.removeEventListener('playing', this.onPlaying);
@@ -903,6 +916,16 @@ export class HtmlVideoPlayer {
         const elem = e.target;
         this.destroyCustomTrack(elem);
         onEndedInternal(this, elem, this.onError);
+    };
+
+    /**
+     * @private
+     * @param e {Event} The event received from the `<video>` element
+     */
+    onLoadedMetadata = (e) => {
+        logPlayback('info', 'Native media metadata loaded', {
+            mediaElement: summarizeMediaElement(e.target)
+        });
     };
 
     /**
@@ -991,6 +1014,9 @@ export class HtmlVideoPlayer {
          * @type {HTMLMediaElement}
          */
         const elem = e.target;
+        logPlayback('info', 'Native media element playing', {
+            mediaElement: summarizeMediaElement(elem)
+        });
         if (!this.#started) {
             this.#started = true;
             elem.removeAttribute('controls');
@@ -1034,6 +1060,16 @@ export class HtmlVideoPlayer {
 
         if (elem.videoWidth === 0 && elem.videoHeight === 0) {
             const mediaSource = this._currentPlayOptions?.mediaSource;
+
+            logPlayback('error', 'Native media has no video dimensions', {
+                mediaElement: summarizeMediaElement(elem),
+                mediaSource: mediaSource ? {
+                    id: mediaSource.Id,
+                    container: mediaSource.Container,
+                    runTimeTicks: mediaSource.RunTimeTicks,
+                    supportsTranscoding: mediaSource.SupportsTranscoding
+                } : null
+            });
 
             // Only trigger this if there is media info
             // Avoid triggering in situations where it might not actually have a video stream (audio only live tv channel)
@@ -1079,7 +1115,14 @@ export class HtmlVideoPlayer {
         const elem = e.target;
         const errorCode = elem.error ? (elem.error.code || 0) : 0;
         const errorMessage = elem.error ? (elem.error.message || '') : '';
-        console.error(`media element error: ${errorCode} ${errorMessage}`);
+        logPlayback('error', 'Native media element error', {
+            error: {
+                code: errorCode,
+                message: errorMessage,
+                mappedError: summarizePlaybackError(elem.error)
+            },
+            mediaElement: summarizeMediaElement(elem)
+        });
 
         let type;
 
@@ -1649,6 +1692,7 @@ export class HtmlVideoPlayer {
 
                 videoElement.addEventListener('timeupdate', this.onTimeUpdate);
                 videoElement.addEventListener('ended', this.onEnded);
+                videoElement.addEventListener('loadedmetadata', this.onLoadedMetadata);
                 videoElement.addEventListener('volumechange', this.onVolumeChange);
                 videoElement.addEventListener('pause', this.onPause);
                 videoElement.addEventListener('playing', this.onPlaying);

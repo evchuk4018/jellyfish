@@ -32,6 +32,13 @@ import { MediaError } from 'types/mediaError';
 import { getMediaError } from 'utils/mediaError';
 import { toApi } from 'utils/jellyfin-apiclient/compat';
 import { bindSkipSegment } from './skipsegment.ts';
+import {
+    logPlayback,
+    sanitizePlaybackUrl,
+    summarizeDeviceProfile,
+    summarizeMediaSource,
+    summarizePlaybackError
+} from './playbackDebug';
 
 const UNLIMITED_ITEMS = -1;
 
@@ -498,11 +505,63 @@ async function getPlaybackInfo(player, apiClient, item, deviceProfile, mediaSour
 
     query.DeviceProfile = deviceProfile;
 
-    const res = await mediaInfoApi.getPostedPlaybackInfo({ itemId: itemId, playbackInfoDto: query });
-    return res.data;
+    logPlayback('info', 'PlaybackInfo request', {
+        itemId,
+        itemName: item.Name,
+        mediaSourceId: mediaSourceId || null,
+        options: {
+            isPlayback: query.IsPlayback,
+            startTimeTicks: query.StartTimeTicks,
+            maxStreamingBitrate: query.MaxStreamingBitrate,
+            audioStreamIndex: query.AudioStreamIndex,
+            subtitleStreamIndex: query.SubtitleStreamIndex,
+            enableDirectPlay: query.EnableDirectPlay,
+            enableDirectStream: query.EnableDirectStream,
+            allowVideoStreamCopy: query.AllowVideoStreamCopy,
+            allowAudioStreamCopy: query.AllowAudioStreamCopy,
+            directPlayProtocols: query.DirectPlayProtocols
+        },
+        deviceProfile: summarizeDeviceProfile(deviceProfile)
+    });
+
+    try {
+        const res = await mediaInfoApi.getPostedPlaybackInfo({ itemId: itemId, playbackInfoDto: query });
+        const result = res.data;
+
+        logPlayback('info', 'PlaybackInfo response', {
+            itemId,
+            errorCode: result?.ErrorCode || null,
+            playSessionId: result?.PlaySessionId || null,
+            mediaSourceCount: result?.MediaSources?.length || 0,
+            mediaSources: (result?.MediaSources || []).map(summarizeMediaSource)
+        });
+
+        return result;
+    } catch (error) {
+        logPlayback('error', 'PlaybackInfo request failed', {
+            itemId,
+            itemName: item.Name,
+            error: summarizePlaybackError(error)
+        });
+        throw error;
+    }
 }
 
 function getOptimalMediaSource(apiClient, item, versions) {
+    logPlayback('info', 'Selecting media source', {
+        itemId: item.Id,
+        itemName: item.Name,
+        candidateCount: versions?.length || 0,
+        candidates: (versions || []).map(summarizeMediaSource)
+    });
+
+    if (!versions?.length) {
+        logPlayback('error', 'No media source candidates returned', {
+            itemId: item.Id,
+            itemName: item.Name
+        });
+    }
+
     const promises = versions.map(function (v) {
         return supportsDirectPlay(apiClient, item, v);
     });
@@ -529,7 +588,16 @@ function getOptimalMediaSource(apiClient, item, versions) {
             return s.SupportsTranscoding;
         })[0];
 
-        return optimalVersion || versions[0];
+        const selectedVersion = optimalVersion || versions[0];
+
+        logPlayback('info', 'Media source selected', {
+            itemId: item.Id,
+            itemName: item.Name,
+            directPlayChecks: results,
+            selected: summarizeMediaSource(selectedVersion)
+        });
+
+        return selectedVersion;
     });
 }
 
@@ -625,6 +693,11 @@ function supportsDirectPlay(apiClient, item, mediaSource) {
  */
 function validatePlaybackInfoResult(instance, result) {
     if (result.ErrorCode) {
+        logPlayback('error', 'PlaybackInfo returned an error', {
+            errorCode: result.ErrorCode,
+            mediaSourceCount: result.MediaSources?.length || 0
+        });
+
         // NOTE: To avoid needing to retranslate the "NoCompatibleStream" message,
         // we need to keep the key in the same format.
         const errMessage = result.ErrorCode === PlaybackErrorCode.NoCompatibleStream ?
@@ -2721,11 +2794,33 @@ export class PlaybackManager {
                     playerData.maxStreamingBitrate = maxBitrate;
                     playerData.streamInfo = streamInfo;
 
+                    logPlayback('info', 'Starting player', {
+                        itemId: item.Id,
+                        itemName: item.Name,
+                        playMethod: streamInfo.playMethod,
+                        url: sanitizePlaybackUrl(streamInfo.url),
+                        mediaSource: summarizeMediaSource(mediaSource)
+                    });
+
                     return player.play(streamInfo).then(function () {
+                        logPlayback('info', 'Player started', {
+                            itemId: item.Id,
+                            itemName: item.Name,
+                            playMethod: streamInfo.playMethod
+                        });
                         loading.hide();
                         onPlaybackStartedFn();
                         onPlaybackStarted(player, playOptions, streamInfo, mediaSource);
                     }, function (err) {
+                        logPlayback('error', 'Player start rejected', {
+                            itemId: item.Id,
+                            itemName: item.Name,
+                            playMethod: streamInfo.playMethod,
+                            url: sanitizePlaybackUrl(streamInfo.url),
+                            error: summarizePlaybackError(err),
+                            mediaSource: summarizeMediaSource(mediaSource)
+                        });
+
                         // TODO: Improve this because it will report playback start on a failure
                         onPlaybackStartedFn();
                         onPlaybackStarted(player, playOptions, streamInfo, mediaSource);
@@ -2897,6 +2992,16 @@ export class PlaybackManager {
                 title: item.Name
             };
 
+            logPlayback('info', 'Stream info created', {
+                itemId: item.Id,
+                itemName: item.Name,
+                mediaType: type,
+                playMethod,
+                mimeType: contentType,
+                url: sanitizePlaybackUrl(mediaUrl),
+                mediaSource: summarizeMediaSource(mediaSource)
+            });
+
             const backdropUrl = getItemBackdropImageUrl(apiClient, item, {}, true);
             if (backdropUrl) {
                 resultInfo.backdropUrl = backdropUrl;
@@ -2965,6 +3070,11 @@ export class PlaybackManager {
                                 return mediaSource;
                             }
                         } else {
+                            logPlayback('error', 'PlaybackInfo returned no usable source', {
+                                itemId: item.Id,
+                                itemName: item.Name,
+                                mediaSourceCount: playbackInfoResult.MediaSources?.length || 0
+                            });
                             showPlaybackInfoErrorMessage(self, `PlaybackError.${MediaError.NO_MEDIA_ERROR}`);
                             return Promise.reject();
                         }
@@ -3399,9 +3509,20 @@ export class PlaybackManager {
 
             const errorType = error.type;
 
-            console.warn('[playbackmanager] onPlaybackError:', e, error);
-
             const streamInfo = error.streamInfo || getPlayerData(player).streamInfo;
+
+            logPlayback('error', 'Playback error', {
+                error: summarizePlaybackError(e),
+                type: errorType,
+                streamInfo: streamInfo ? {
+                    playMethod: streamInfo.playMethod,
+                    url: sanitizePlaybackUrl(streamInfo.url),
+                    mediaType: streamInfo.mediaType,
+                    itemId: streamInfo.item?.Id,
+                    itemName: streamInfo.item?.Name,
+                    mediaSource: summarizeMediaSource(streamInfo.mediaSource)
+                } : null
+            });
 
             if (streamInfo?.url) {
                 const isAlreadyFallbacking = streamInfo.url.toLowerCase().includes('transcodereasons');
@@ -3414,6 +3535,14 @@ export class PlaybackManager {
                     const isRemoteSource = streamInfo.item.LocationType === 'Remote';
                     // force transcoding and only allow remuxing for remote source like liveTV, but only for initial trial
                     const tryVideoStreamCopy = isRemoteSource && !isAlreadyFallbacking;
+
+                    logPlayback('info', 'Retrying playback with transcoding', {
+                        itemId: streamInfo.item?.Id,
+                        itemName: streamInfo.item?.Name,
+                        errorType,
+                        startTime,
+                        tryVideoStreamCopy
+                    });
 
                     changeStream(player, startTime, {
                         EnableDirectPlay: false,

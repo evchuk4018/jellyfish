@@ -2,6 +2,7 @@ import appSettings from '../scripts/settings/appSettings' ;
 import browser from '../scripts/browser';
 import Events from '../utils/events.ts';
 import { MediaError } from 'types/mediaError';
+import { logPlayback, summarizeMediaElement, summarizePlaybackError } from './playback/playbackDebug';
 
 export function getSavedVolume() {
     return appSettings.get('volume') || 1;
@@ -110,6 +111,11 @@ export function handleHlsJsMediaError(instance, reject) {
 }
 
 export function onErrorInternal(instance, type) {
+    logPlayback('error', 'Player error emitted', {
+        type,
+        mediaElement: summarizeMediaElement(instance?._mediaElement)
+    });
+
     // Needed for video
     if (instance.destroyCustomTrack) {
         instance.destroyCustomTrack(instance._mediaElement);
@@ -196,9 +202,18 @@ function onSuccessfulPlay(elem, onErrorFn) {
 }
 
 export function playWithPromise(elem, onErrorFn) {
+    logPlayback('info', 'Native video play requested', {
+        mediaElement: summarizeMediaElement(elem)
+    });
+
     try {
         return elem.play()
             .catch((e) => {
+                logPlayback('error', 'Native video play rejected', {
+                    error: summarizePlaybackError(e),
+                    mediaElement: summarizeMediaElement(elem)
+                });
+
                 const errorName = (e.name || '').toLowerCase();
                 // safari uses aborterror
                 if (errorName === 'notallowederror'
@@ -209,11 +224,17 @@ export function playWithPromise(elem, onErrorFn) {
                 return Promise.reject(e);
             })
             .then(() => {
+                logPlayback('info', 'Native video play promise resolved', {
+                    mediaElement: summarizeMediaElement(elem)
+                });
                 onSuccessfulPlay(elem, onErrorFn);
                 return Promise.resolve();
             });
     } catch (err) {
-        console.error('error calling video.play: ' + err);
+        logPlayback('error', 'Native video play threw', {
+            error: summarizePlaybackError(err),
+            mediaElement: summarizeMediaElement(elem)
+        });
         return Promise.reject();
     }
 }
