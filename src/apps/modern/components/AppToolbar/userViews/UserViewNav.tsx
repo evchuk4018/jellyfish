@@ -1,6 +1,7 @@
 import type { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
 import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models/base-item-kind';
 import { CollectionType } from '@jellyfin/sdk/lib/generated-client/models/collection-type';
+import AddCircleOutline from '@mui/icons-material/AddCircleOutline';
 import ArrowDropDown from '@mui/icons-material/ArrowDropDown';
 import Favorite from '@mui/icons-material/Favorite';
 import Button from '@mui/material/Button/Button';
@@ -61,7 +62,7 @@ const UserViewNav = () => {
     const libraryId = searchParams.get('topParentId') || searchParams.get('parentId');
     const collectionType = searchParams.get('collectionType');
     const { activeTab } = useCurrentTab();
-    const { menuLinks } = useWebConfig();
+    const { menuLinks, seerr } = useWebConfig();
 
     const isExtraLargeScreen = useMediaQuery((t: Theme) => t.breakpoints.up('xl'));
     const isLargeScreen = useMediaQuery((t: Theme) => t.breakpoints.up('lg'));
@@ -132,6 +133,18 @@ const UserViewNav = () => {
             >
                 {globalize.translate(MetaView.Favorites.Name)}
             </Button>
+
+            {seerr?.enabled && (
+                <Button
+                    variant='text'
+                    color={location.pathname === '/requests' ? 'primary' : 'inherit'}
+                    startIcon={<AddCircleOutline />}
+                    component={Link}
+                    to='/requests'
+                >
+                    {seerr.name || 'Requests'}
+                </Button>
+            )}
 
             {primaryNavItems?.map(navItem => {
                 if ('url' in navItem) {
