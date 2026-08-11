@@ -1,6 +1,7 @@
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -8,7 +9,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import React, { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import Loading from 'components/loading/LoadingComponent';
 import Page from 'components/Page';
 
 import SeerrMediaCard from 'apps/experimental/features/seerr/components/SeerrMediaCard';
@@ -52,6 +52,47 @@ const Discover = () => {
         setSearchValue(event.target.value);
     }, []);
 
+    let discoverContent: React.ReactNode;
+    if (discover.isPending) {
+        discoverContent = (
+            <Stack
+                role='status'
+                direction='row'
+                alignItems='center'
+                spacing={1.5}
+            >
+                <CircularProgress size={24} />
+                <Typography color='text.secondary'>Loading results…</Typography>
+            </Stack>
+        );
+    } else if (discover.isError) {
+        discoverContent = null;
+    } else {
+        discoverContent = (
+            <>
+                {!discover.data?.results.length && (
+                    <Typography color='text.secondary'>No movies or TV shows found.</Typography>
+                )}
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                        gap: 2
+                    }}
+                >
+                    {discover.data?.results.map(media => (
+                        <SeerrMediaCard
+                            key={`${media.mediaType}-${media.id}`}
+                            media={media}
+                            isSubmitting={requestingMediaId === media.id}
+                            onRequest={onRequest}
+                        />
+                    ))}
+                </Box>
+            </>
+        );
+    }
+
     return (
         <Page
             id='discoverPage'
@@ -61,7 +102,7 @@ const Discover = () => {
             <Box className='padded-left padded-right padded-bottom-page' sx={{ pt: 3 }}>
                 <Stack spacing={3}>
                     <Stack spacing={1}>
-                        <Typography component='h1' variant='h4'>Discover</Typography>
+                        <Typography component='h1' variant='h4' color='text.primary'>Discover</Typography>
                         <Typography color='text.secondary'>Find movies and TV shows to add to your Jellyfin library.</Typography>
                     </Stack>
                     <Box component='form' onSubmit={onSearchSubmit}>
@@ -89,29 +130,7 @@ const Discover = () => {
                     {discover.isError && (
                         <Alert severity='error'>{discover.error.message}</Alert>
                     )}
-                    {discover.isPending ? <Loading /> : (
-                        <>
-                            {!discover.data?.results.length && (
-                                <Typography color='text.secondary'>No movies or TV shows found.</Typography>
-                            )}
-                            <Box
-                                sx={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                                    gap: 2
-                                }}
-                            >
-                                {discover.data?.results.map(media => (
-                                    <SeerrMediaCard
-                                        key={`${media.mediaType}-${media.id}`}
-                                        media={media}
-                                        isSubmitting={requestingMediaId === media.id}
-                                        onRequest={onRequest}
-                                    />
-                                ))}
-                            </Box>
-                        </>
-                    )}
+                    {discoverContent}
                 </Stack>
             </Box>
         </Page>
