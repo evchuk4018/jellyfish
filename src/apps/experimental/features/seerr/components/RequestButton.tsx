@@ -1,7 +1,3 @@
-import AddIcon from '@mui/icons-material/Add';
-import CheckIcon from '@mui/icons-material/Check';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
 import React, { type FC } from 'react';
 
 interface RequestButtonProps {
@@ -19,40 +15,37 @@ const RequestButton: FC<RequestButtonProps> = ({
 }) => {
     if (available) {
         return (
-            <Button
-                size='small'
-                variant='outlined'
-                startIcon={<CheckIcon />}
+            <button
+                type='button'
+                className='seerrRequestButton seerrRequestButton-complete'
                 disabled
             >
-                Available
-            </Button>
+                ✓ Available
+            </button>
         );
     }
 
     if (requestStatus === 1 || requestStatus === 2) {
         return (
-            <Button
-                size='small'
-                variant='outlined'
-                startIcon={<CheckIcon />}
+            <button
+                type='button'
+                className='seerrRequestButton seerrRequestButton-complete'
                 disabled
             >
-                {requestStatus === 1 ? 'Requested' : 'Approved'}
-            </Button>
+                ✓ {requestStatus === 1 ? 'Requested' : 'Approved'}
+            </button>
         );
     }
 
     return (
-        <Button
-            size='small'
-            variant='contained'
-            startIcon={isSubmitting ? <CircularProgress color='inherit' size={16} /> : <AddIcon />}
+        <button
+            type='button'
+            className='seerrRequestButton'
             onClick={onClick}
             disabled={isSubmitting}
         >
-            {isSubmitting ? 'Requesting…' : 'Request'}
-        </Button>
+            {isSubmitting ? 'Requesting…' : '+ Request'}
+        </button>
     );
 };
 

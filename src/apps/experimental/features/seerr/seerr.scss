@@ -1,0 +1,228 @@
+.seerrPage {
+    color: #f5f5f5 !important;
+}
+
+.seerrPage-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding-top: 1.5rem;
+}
+
+.seerrPage-header h1,
+.seerrPage-header p,
+.seerrMediaCard h2,
+.seerrMediaCard p,
+.seerrRequestCard h2,
+.seerrRequestCard p {
+    margin: 0;
+    color: inherit !important;
+}
+
+.seerrPage-header h1 {
+    font-size: 1.8rem;
+    line-height: 1.25;
+}
+
+.seerrPage-header p,
+.seerrMediaCard-meta,
+.seerrMediaCard-overview,
+.seerrRequestCard-overview {
+    color: #c7c7c7 !important;
+}
+
+.seerrPage-header p {
+    margin-top: 0.4rem;
+}
+
+.seerrSearch {
+    display: flex;
+    gap: 0.5rem;
+    max-width: none;
+}
+
+.seerrNotice {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 0.25rem;
+    background: #242424;
+    color: #f5f5f5 !important;
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+.seerrNotice-loading::before {
+    content: "";
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    margin-right: 0.6rem;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #00a4dc;
+    border-radius: 50%;
+    vertical-align: -0.1rem;
+    animation: seerr-loading 0.8s linear infinite;
+}
+
+.seerrNotice-error {
+    border-color: #e05252;
+    background: #3a1717;
+}
+
+.seerrNotice-success {
+    border-color: rgba(0, 164, 220, 0.65);
+}
+
+.seerrResults {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: 1rem;
+}
+
+.seerrMediaCard,
+.seerrRequestCard {
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 0.35rem;
+    background: #202020;
+    color: #f5f5f5 !important;
+}
+
+.seerrMediaCard {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.seerrMediaCard-poster {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    background: #303030;
+    color: #c7c7c7 !important;
+    text-align: center;
+}
+
+.seerrMediaCard-poster img,
+.seerrRequestCard-poster img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.seerrMediaCard-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 0.85rem;
+}
+
+.seerrMediaCard h2,
+.seerrRequestCard h2 {
+    font-size: 1.1rem;
+    line-height: 1.25;
+}
+
+.seerrMediaCard-meta {
+    font-size: 0.8rem;
+}
+
+.seerrMediaCard-overview,
+.seerrRequestCard-overview {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    -webkit-box-orient: vertical;
+}
+
+.seerrMediaCard-overview {
+    min-height: 4.05rem;
+    -webkit-line-clamp: 3;
+}
+
+.seerrMediaCard-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: auto;
+    padding-top: 0.4rem;
+}
+
+.seerrRequestButton {
+    min-height: 2.25rem;
+    padding: 0.45rem 0.8rem;
+    border: 0;
+    border-radius: 0.25rem;
+    background: #00a4dc;
+    color: #081116 !important;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.seerrRequestButton:focus-visible {
+    outline: 0.18rem solid #fff;
+    outline-offset: 0.15rem;
+}
+
+.seerrRequestButton:disabled {
+    cursor: default;
+    opacity: 0.75;
+}
+
+.seerrRequestButton-complete {
+    border: 1px solid #66c7e8;
+    background: transparent;
+    color: #d9f5ff !important;
+}
+
+.seerrRequestList {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.seerrRequestCard {
+    display: flex;
+    min-height: 9.5rem;
+}
+
+.seerrRequestCard-poster {
+    width: 6.5rem;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: #303030;
+}
+
+.seerrRequestCard-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 0.9rem;
+}
+
+.seerrRequestCard-overview {
+    -webkit-line-clamp: 2;
+}
+
+@keyframes seerr-loading {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 599px) {
+    .seerrSearch {
+        flex-direction: column;
+    }
+
+    .seerrResults {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

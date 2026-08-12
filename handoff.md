@@ -1,47 +1,84 @@
-# Jellyfin Firefox playback fix handoff
+# Jellyfin Seerr blank-page handoff
 
-## Diagnosis
+## User-visible issue
 
-- Affected item: `Rick and Morty / Season 9 / Field of Dreams`.
-- Client: Firefox 153 on Windows 10.
-- Source: MKV with HEVC Main 10 video, E-AC-3 5.1 audio, and 39 embedded
-  subtitle streams.
-- The router same-path message is benign. The three bitrate probes succeed and
-  are normal; they can also run automatically after reconnect.
-- The original attempt stopped before `PlaybackInfo`. The item-details click
-  dropped the playback promise, and the playback preflight had no structured
-  logging, so failures could surface only as `Uncaught (in promise) undefined`.
-- Firefox 153 has an open platform HEVC regression on Windows:
-  https://bugzilla.mozilla.org/show_bug.cgi?id=2049680
-- The media file is readable and healthy. The exact HEVC Main 10 stream passed
-  a VAAPI decode and H.264 encode-to-null test in the Jellyfin container.
+Jellyfin's custom **Discover** and **My Requests** routes render their page shell,
+but no Seerr content appears on the user's iPhone. On Discover, the search field
+and blue Search button are visible while the title, description, loading state,
+result cards, and errors are absent. My Requests previously showed the same
+blank body. Closing and reopening Jellyfin did not change the behavior.
 
-## Fix
+The latest supplied screenshot was taken around 7:59 PM on 2026-08-11 and shows
+`Rick` in the Discover search field with an otherwise blank page.
 
-- Firefox is excluded from the HEVC fMP4-HLS capability. Jellyfin therefore
-  selects the reliable H.264/AAC HLS fallback for this MKV.
-- AudioContext speaker probing is guarded so browser privacy restrictions
-  cannot abort playback before `PlaybackInfo`; the temporary context is closed.
-- The item-details playback promise is handled.
-- Playback request, player selection, bitrate completion, remote-player
-  delegation, and every preflight stage now emit redacted
-  `[jellyfin-playback]` diagnostics.
+## Evidence and diagnosis
 
-## Verification
+- Seerr itself is healthy and works for the user outside Jellyfin.
+- The bridge CORS allowlist was corrected to include the Jellyfin origin
+  `http://homelab.tail861ffd.ts.net:8096`.
+- Using the active iPhone Jellyfin session server-side, the bridge returns HTTP
+  200 with three results for `Rick and Morty`. My Requests returns HTTP 200 with
+  two requests, including Rick and Morty.
+- The iPhone opened Jellyfin twice after the previous deployment. Jellyfin's
+  WebSocket log records connections from `100.96.181.51` at approximately
+  7:58 PM and 7:59 PM.
+- The served HTML is `no-cache`, the Discover and Requests chunks are
+  content-hashed, and Jellyfin's service worker has no fetch/cache handler. A
+  stale service-worker cache is therefore not the cause.
+- Earlier failures rendered the red MUI alert icon without its message. The
+  current screenshot leaves the expected title/description area blank while
+  MUI input and button controls remain visible. This isolates the remaining
+  symptom to theme-dependent MUI text/card rendering in Jellyfin's stable
+  layout on the iPhone, rather than an empty Seerr response.
+- The custom routes also omitted Jellyfin's standard `mainAnimatedPage` class.
+- A network request previously had no deadline, so a browser-specific fetch
+  stall could leave the route pending without a useful terminal state.
 
-- `npm test -- --run`: 163 tests passed.
-- `npm run build:check`: passed.
-- Focused ESLint: no errors (pre-existing warnings only).
-- `npm run build:production`: passed with only existing bundle-size and stale
-  Browserslist warnings.
-- Jellyfin `PlaybackInfo` with the fallback profile selected H.264/AAC HLS with
-  `ContainerNotSupported,VideoCodecNotSupported,AudioCodecNotSupported`, and
-  returned a valid HLS master playlist.
+## Fixes made
 
-## Security note
+Previous deployed fixes:
 
-The supplied browser console transcript contained an access token. That
-specific browser session was revoked during the investigation. Do not include
-raw WebSocket URLs, stored credentials, HLS playlist URLs, or network request
-URLs in future logs; filter for `[jellyfin-playback]`, whose URL values are
-redacted.
+- `38c5f4b84a`: exposed Discover and My Requests in the stable Jellyfin routes.
+- `1c16d517b2`: made Seerr queries use the active Jellyfin API client's token,
+  removed the token-dependent query disable, added explicit query states, and
+  added redacted client diagnostics.
+
+Current fix:
+
+- Replaces theme-dependent MUI typography, alerts, cards, and request buttons
+  with semantic HTML and explicit Seerr-scoped colors.
+- Shows a visible state for every outcome: loading, an error, no results, or an
+  exact result/request count.
+- Adds a 15-second bridge timeout so loading cannot remain silent indefinitely.
+- Uses `cache: 'no-store'` for bridge calls.
+- Adds `mainAnimatedPage` to both custom routes.
+- Keeps MUI only for the Discover search input/button, which are the controls
+  already proven visible in the supplied screenshots.
+
+## Verification and deployment checklist
+
+Before considering this complete:
+
+1. Run the full test suite, ESLint, TypeScript check, stylesheet lint, and the
+   production build.
+2. Commit and push the result to both `main` and `custom-ui`.
+3. Rebuild the Jellyfin custom UI on `homelab` and confirm the served revision
+   and new Discover bundle contain the visible Seerr status strings.
+4. Apply pending database migrations and run the migration check, even though
+   this patch has no database changes.
+5. Ask the user to reopen Discover. The page must now show at least one of:
+   `Loading Seerr results…`, `N results from Seerr`, `No movies or TV shows
+   found.`, or a concrete error. A completely blank state is no longer a valid
+   render path.
+
+## If the user still cannot load results
+
+The exact visible status text is the next diagnostic signal. If a timeout or
+network error appears, inspect the bridge's successful-request access telemetry
+and the request's `Origin`; do not guess from the Jellyfin server response. If
+the new title and status are still absent, verify that the iPhone received the
+new Discover JavaScript and Seerr stylesheet assets from port 8096.
+
+Do not put Jellyfin access tokens, authenticated WebSocket URLs, or credentials
+in this file or in logs. No browser/screenshot verification was performed, in
+accordance with the repository instructions.

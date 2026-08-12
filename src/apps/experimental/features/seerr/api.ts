@@ -13,6 +13,7 @@ import { selectSeerrAuthToken } from './auth';
 
 const SEERR_QUERY_KEY = 'seerr';
 const DEFAULT_BRIDGE_URL = '/music/api/seerr';
+const REQUEST_TIMEOUT_MS = 15_000;
 
 type RequestInput = {
     mediaType: SeerrMediaType;
@@ -44,6 +45,7 @@ const requestBridge = async <T>(
     init: RequestInit = {}
 ) => {
     const endpoint = path.split('?')[0];
+    let timeout: ReturnType<typeof globalThis.setTimeout>;
     const headers: Record<string, string> = {
         ...(init.headers as Record<string, string> | undefined),
         Authorization: `Bearer ${token}`,
@@ -56,11 +58,25 @@ const requestBridge = async <T>(
         method: init.method || 'GET'
     });
 
-    const response = await fetch(`${bridgeUrl}${path}`, {
-        ...init,
-        headers,
-        credentials: 'omit'
-    });
+    let response: Response;
+    try {
+        response = await Promise.race([
+            fetch(`${bridgeUrl}${path}`, {
+                ...init,
+                headers,
+                cache: 'no-store',
+                credentials: 'omit'
+            }),
+            new Promise<never>((_resolve, reject) => {
+                timeout = globalThis.setTimeout(
+                    () => reject(new Error('Seerr did not respond within 15 seconds')),
+                    REQUEST_TIMEOUT_MS
+                );
+            })
+        ]);
+    } finally {
+        globalThis.clearTimeout(timeout!);
+    }
 
     if (!response.ok) {
         const body = await response.json().catch(() => undefined) as { error?: string } | undefined;
@@ -91,6 +107,7 @@ export const useSeerrDiscover = (query: string, page = 1) => {
             requireToken(__legacyApiClient__),
             `/discover?q=${encodeURIComponent(query)}&page=${page}`
         ),
+        retry: false,
         staleTime: 60_000
     });
 };
@@ -107,6 +124,7 @@ export const useSeerrRequests = () => {
             requireToken(__legacyApiClient__),
             '/requests'
         ),
+        retry: false,
         staleTime: 30_000
     });
 };

@@ -1,19 +1,16 @@
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
 import SearchIcon from '@mui/icons-material/Search';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
 import React, { useCallback, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 import Page from 'components/Page';
 
-import SeerrMediaCard from 'apps/experimental/features/seerr/components/SeerrMediaCard';
 import { useCreateSeerrRequest, useSeerrDiscover } from 'apps/experimental/features/seerr/api';
+import SeerrMediaCard from 'apps/experimental/features/seerr/components/SeerrMediaCard';
 import type { SeerrMedia } from 'apps/experimental/features/seerr/types';
+
+import 'apps/experimental/features/seerr/seerr.scss';
 
 const Discover = () => {
     const [ searchParams, setSearchParams ] = useSearchParams();
@@ -55,32 +52,31 @@ const Discover = () => {
     let discoverContent: React.ReactNode;
     if (discover.isPending) {
         discoverContent = (
-            <Stack
-                role='status'
-                direction='row'
-                alignItems='center'
-                spacing={1.5}
-            >
-                <CircularProgress size={24} />
-                <Typography color='text.secondary'>Loading results…</Typography>
-            </Stack>
+            <div role='status' className='seerrNotice seerrNotice-loading'>
+                Loading Seerr results…
+            </div>
         );
     } else if (discover.isError) {
-        discoverContent = null;
+        discoverContent = (
+            <div role='alert' className='seerrNotice seerrNotice-error'>
+                {discover.error.message}
+            </div>
+        );
     } else {
+        const results = discover.data?.results || [];
+        const resultCount = results.length;
+        let resultLabel = 'No movies or TV shows found.';
+        if (resultCount) {
+            const suffix = resultCount === 1 ? '' : 's';
+            resultLabel = `${resultCount} result${suffix} from Seerr`;
+        }
         discoverContent = (
             <>
-                {!discover.data?.results.length && (
-                    <Typography color='text.secondary'>No movies or TV shows found.</Typography>
-                )}
-                <Box
-                    sx={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                        gap: 2
-                    }}
-                >
-                    {discover.data?.results.map(media => (
+                <div role='status' className='seerrNotice seerrNotice-success'>
+                    {resultLabel}
+                </div>
+                <section className='seerrResults' aria-label='Seerr search results'>
+                    {results.map(media => (
                         <SeerrMediaCard
                             key={`${media.mediaType}-${media.id}`}
                             media={media}
@@ -88,7 +84,7 @@ const Discover = () => {
                             onRequest={onRequest}
                         />
                     ))}
-                </Box>
+                </section>
             </>
         );
     }
@@ -96,43 +92,38 @@ const Discover = () => {
     return (
         <Page
             id='discoverPage'
-            className='libraryPage noSecondaryNavPage'
+            className='mainAnimatedPage libraryPage noSecondaryNavPage seerrPage'
             title='Discover'
         >
-            <Box className='padded-left padded-right padded-bottom-page' sx={{ pt: 3 }}>
-                <Stack spacing={3}>
-                    <Stack spacing={1}>
-                        <Typography component='h1' variant='h4' color='text.primary'>Discover</Typography>
-                        <Typography color='text.secondary'>Find movies and TV shows to add to your Jellyfin library.</Typography>
-                    </Stack>
-                    <Box component='form' onSubmit={onSearchSubmit}>
-                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                            <TextField
-                                fullWidth
-                                value={searchValue}
-                                label='Search movies and TV'
-                                onChange={onSearchValueChange}
-                                slotProps={{ htmlInput: { maxLength: 100 } }}
-                            />
-                            <Button
-                                type='submit'
-                                variant='contained'
-                                startIcon={<SearchIcon />}
-                                sx={{ minWidth: { sm: 120 } }}
-                            >
-                                Search
-                            </Button>
-                        </Stack>
-                    </Box>
-                    {createRequest.isError && (
-                        <Alert severity='error'>{createRequest.error.message}</Alert>
-                    )}
-                    {discover.isError && (
-                        <Alert severity='error'>{discover.error.message}</Alert>
-                    )}
-                    {discoverContent}
-                </Stack>
-            </Box>
+            <div className='padded-left padded-right padded-bottom-page seerrPage-content'>
+                <header className='seerrPage-header'>
+                    <h1>Discover</h1>
+                    <p>Find movies and TV shows to add to your Jellyfin library.</p>
+                </header>
+                <form onSubmit={onSearchSubmit} className='seerrSearch'>
+                    <TextField
+                        fullWidth
+                        value={searchValue}
+                        label='Search movies and TV'
+                        onChange={onSearchValueChange}
+                        slotProps={{ htmlInput: { maxLength: 100 } }}
+                    />
+                    <Button
+                        type='submit'
+                        variant='contained'
+                        startIcon={<SearchIcon />}
+                        sx={{ minWidth: { sm: 120 } }}
+                    >
+                        Search
+                    </Button>
+                </form>
+                {createRequest.isError ? (
+                    <div role='alert' className='seerrNotice seerrNotice-error'>
+                        {createRequest.error.message}
+                    </div>
+                ) : null}
+                {discoverContent}
+            </div>
         </Page>
     );
 };

@@ -1,13 +1,11 @@
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import React from 'react';
 
 import Page from 'components/Page';
-import SeerrRequestCard from 'apps/experimental/features/seerr/components/SeerrRequestCard';
+
 import { useSeerrRequests } from 'apps/experimental/features/seerr/api';
+import SeerrRequestCard from 'apps/experimental/features/seerr/components/SeerrRequestCard';
+
+import 'apps/experimental/features/seerr/seerr.scss';
 
 const Requests = () => {
     const requests = useSeerrRequests();
@@ -15,46 +13,49 @@ const Requests = () => {
 
     if (requests.isPending) {
         requestContent = (
-            <Stack
-                role='status'
-                direction='row'
-                alignItems='center'
-                spacing={1.5}
-            >
-                <CircularProgress size={24} />
-                <Typography color='text.secondary'>Loading requests…</Typography>
-            </Stack>
+            <div role='status' className='seerrNotice seerrNotice-loading'>
+                Loading Seerr requests…
+            </div>
         );
     } else if (requests.isError) {
-        requestContent = null;
-    } else if (requests.data?.results.length) {
         requestContent = (
-            <Stack spacing={2}>
+            <div role='alert' className='seerrNotice seerrNotice-error'>
+                {requests.error.message}
+            </div>
+        );
+    } else if (requests.data?.results.length) {
+        const resultCount = requests.data.results.length;
+        requestContent = (
+            <section className='seerrRequestList' aria-label='Your Seerr requests'>
+                <div role='status' className='seerrNotice seerrNotice-success'>
+                    {resultCount} request{resultCount === 1 ? '' : 's'} from Seerr
+                </div>
                 {requests.data.results.map(request => (
                     <SeerrRequestCard key={request.id} request={request} />
                 ))}
-            </Stack>
+            </section>
         );
     } else {
-        requestContent = <Typography color='text.secondary'>You have not requested any media yet.</Typography>;
+        requestContent = (
+            <div role='status' className='seerrNotice seerrNotice-success'>
+                You have not requested any media yet.
+            </div>
+        );
     }
 
     return (
         <Page
             id='requestsPage'
-            className='libraryPage noSecondaryNavPage'
+            className='mainAnimatedPage libraryPage noSecondaryNavPage seerrPage'
             title='My Requests'
         >
-            <Box className='padded-left padded-right padded-bottom-page' sx={{ pt: 3 }}>
-                <Stack spacing={3}>
-                    <Stack spacing={1}>
-                        <Typography component='h1' variant='h4' color='text.primary'>My Requests</Typography>
-                        <Typography color='text.secondary'>Track the movies and TV shows you have requested.</Typography>
-                    </Stack>
-                    {requests.isError && <Alert severity='error'>{requests.error.message}</Alert>}
-                    {requestContent}
-                </Stack>
-            </Box>
+            <div className='padded-left padded-right padded-bottom-page seerrPage-content'>
+                <header className='seerrPage-header'>
+                    <h1>My Requests</h1>
+                    <p>Track the movies and TV shows you have requested.</p>
+                </header>
+                {requestContent}
+            </div>
         </Page>
     );
 };
