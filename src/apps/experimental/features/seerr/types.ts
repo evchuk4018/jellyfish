@@ -11,6 +11,32 @@ export type SeerrMedia = {
     requestStatus?: number;
 };
 
+export type SeerrSeason = {
+    seasonNumber: number;
+    name: string;
+    episodeCount: number;
+    overview: string;
+    posterUrl?: string;
+    airDate?: string;
+    available: boolean;
+    partiallyAvailable: boolean;
+    requestStatus?: number;
+};
+
+export type SeerrMediaDetail = SeerrMedia & {
+    backdropUrl?: string;
+    tagline?: string;
+    genres: string[];
+    seasons?: SeerrSeason[];
+};
+
+export type SeerrRequestInput = {
+    mediaType: SeerrMediaType;
+    mediaId: number;
+    tvdbId?: number;
+    seasons?: number[];
+};
+
 export type SeerrRequest = {
     id: number;
     mediaId: number;

@@ -2,23 +2,23 @@ import SearchIcon from '@mui/icons-material/Search';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import React, { useCallback, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import Page from 'components/Page';
 
-import { useCreateSeerrRequest, useSeerrDiscover } from 'apps/experimental/features/seerr/api';
+import { useSeerrDiscover } from 'apps/experimental/features/seerr/api';
 import SeerrMediaCard from 'apps/experimental/features/seerr/components/SeerrMediaCard';
+import { getSeerrDetailPath } from 'apps/experimental/features/seerr/navigation';
 import type { SeerrMedia } from 'apps/experimental/features/seerr/types';
 
 import 'apps/experimental/features/seerr/seerr.scss';
 
 const Discover = () => {
     const [ searchParams, setSearchParams ] = useSearchParams();
+    const navigate = useNavigate();
     const query = searchParams.get('q') || '';
     const [ searchValue, setSearchValue ] = useState(query);
-    const [ requestingMediaId, setRequestingMediaId ] = useState<number>();
     const discover = useSeerrDiscover(query);
-    const createRequest = useCreateSeerrRequest();
 
     const onSearchSubmit = useCallback((event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -27,23 +27,9 @@ const Discover = () => {
         else setSearchParams({});
     }, [ searchValue, setSearchParams ]);
 
-    const requestMedia = useCallback(async (media: SeerrMedia) => {
-        setRequestingMediaId(media.id);
-        try {
-            await createRequest.mutateAsync({
-                mediaId: media.id,
-                mediaType: media.mediaType
-            });
-        } catch {
-            // The mutation error is rendered below.
-        } finally {
-            setRequestingMediaId(undefined);
-        }
-    }, [ createRequest ]);
-
-    const onRequest = useCallback((media: SeerrMedia) => {
-        requestMedia(media).catch(() => undefined);
-    }, [ requestMedia ]);
+    const onSelect = useCallback((media: SeerrMedia) => {
+        navigate(getSeerrDetailPath(media, query));
+    }, [ navigate, query ]);
 
     const onSearchValueChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchValue(event.target.value);
@@ -53,7 +39,7 @@ const Discover = () => {
     if (discover.isPending) {
         discoverContent = (
             <div role='status' className='seerrNotice seerrNotice-loading'>
-                Loading Seerr results…
+                Loading Seerr results...
             </div>
         );
     } else if (discover.isError) {
@@ -80,8 +66,7 @@ const Discover = () => {
                         <SeerrMediaCard
                             key={`${media.mediaType}-${media.id}`}
                             media={media}
-                            isSubmitting={requestingMediaId === media.id}
-                            onRequest={onRequest}
+                            onSelect={onSelect}
                         />
                     ))}
                 </section>
@@ -117,11 +102,6 @@ const Discover = () => {
                         Search
                     </Button>
                 </form>
-                {createRequest.isError ? (
-                    <div role='alert' className='seerrNotice seerrNotice-error'>
-                        {createRequest.error.message}
-                    </div>
-                ) : null}
                 {discoverContent}
             </div>
         </Page>

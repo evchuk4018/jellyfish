@@ -13,6 +13,11 @@
 .seerrPage-header p,
 .seerrMediaCard h2,
 .seerrMediaCard p,
+.seerrDetailHero h1,
+.seerrDetailHero h2,
+.seerrDetailHero p,
+.seerrSeasons h2,
+.seerrSeason p,
 .seerrRequestCard h2,
 .seerrRequestCard p {
     margin: 0;
@@ -96,6 +101,26 @@
     min-width: 0;
 }
 
+.seerrMediaCard-select {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit !important;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    flex-direction: column;
+}
+
+.seerrMediaCard-select:focus-visible {
+    outline: 0.18rem solid #fff;
+    outline-offset: -0.2rem;
+}
+
 .seerrMediaCard-poster {
     display: flex;
     align-items: center;
@@ -154,6 +179,15 @@
     padding-top: 0.4rem;
 }
 
+.seerrMediaCard-view {
+    align-self: flex-start;
+    margin-top: auto;
+    padding-top: 0.4rem;
+    color: #72d2f2 !important;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
 .seerrRequestButton {
     min-height: 2.25rem;
     padding: 0.45rem 0.8rem;
@@ -180,6 +214,257 @@
     border: 1px solid #66c7e8;
     background: transparent;
     color: #d9f5ff !important;
+}
+
+.seerrSecondaryButton {
+    min-height: 2.25rem;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 0.25rem;
+    background: transparent;
+    color: #f5f5f5 !important;
+    font: inherit;
+    cursor: pointer;
+}
+
+.seerrSecondaryButton:focus-visible {
+    outline: 0.18rem solid #fff;
+    outline-offset: 0.15rem;
+}
+
+.seerrSecondaryButton:disabled {
+    cursor: default;
+    opacity: 0.75;
+}
+
+.seerrDetailPage-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.seerrBackLink {
+    align-self: flex-start;
+    margin: 1rem 1.5rem 0;
+    color: #d9f5ff !important;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.seerrBackLink:focus-visible {
+    outline: 0.18rem solid #fff;
+    outline-offset: 0.2rem;
+}
+
+.seerrDetailHero {
+    position: relative;
+    min-height: 28rem;
+    overflow: hidden;
+    background: #111827;
+}
+
+.seerrDetailHero-backdrop,
+.seerrDetailHero-shade {
+    position: absolute;
+    inset: 0;
+}
+
+.seerrDetailHero-backdrop {
+    background-position: center top;
+    background-size: cover;
+    opacity: 0.5;
+}
+
+.seerrDetailHero-shade {
+    background: linear-gradient(180deg, rgba(10, 18, 32, 0.35) 0%, #101827 88%);
+}
+
+.seerrDetailHero-content {
+    position: relative;
+    display: grid;
+    max-width: 68rem;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 2rem;
+    gap: 2rem;
+    grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr);
+}
+
+.seerrDetailHero-poster {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    background: #303030;
+    color: #c7c7c7 !important;
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.35);
+}
+
+.seerrDetailHero-poster img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.seerrDetailHero-copy {
+    align-self: end;
+}
+
+.seerrDetailHero-copy h1 {
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    line-height: 1.1;
+}
+
+.seerrDetailHero-copy h2 {
+    margin-top: 1.5rem;
+    font-size: 1.35rem;
+}
+
+.seerrDetailHero-copy > .seerrRequestButton {
+    margin-top: 1.25rem;
+}
+
+.seerrDetailHero-meta {
+    margin-top: 0.65rem !important;
+    color: #d0d7e2 !important;
+}
+
+.seerrDetailHero-tagline {
+    margin-top: 1.75rem !important;
+    color: #d0d7e2 !important;
+    font-size: 1.15rem;
+    font-style: italic;
+}
+
+.seerrDetailHero-overview {
+    margin-top: 0.5rem;
+    color: #d0d7e2 !important;
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+.seerrDetailPage-content > .seerrNotice,
+.seerrSeasons {
+    box-sizing: border-box;
+    width: calc(100% - 3rem);
+    max-width: 68rem;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.seerrSeasons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.seerrSeasons > h2 {
+    margin-bottom: 0.35rem;
+    font-size: 1.8rem;
+}
+
+.seerrSeason {
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 0.4rem;
+    background: #202a39;
+}
+
+.seerrSeason-summary {
+    display: grid;
+    align-items: center;
+    width: 100%;
+    min-height: 4.25rem;
+    padding: 0.8rem 1rem;
+    border: 0;
+    background: transparent;
+    color: #f5f5f5 !important;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    gap: 0.75rem;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.seerrSeason-summary:focus-visible {
+    outline: 0.18rem solid #fff;
+    outline-offset: -0.2rem;
+}
+
+.seerrSeason-heading {
+    display: flex;
+    align-items: baseline;
+    min-width: 0;
+    gap: 0.75rem;
+}
+
+.seerrSeason-heading strong {
+    font-size: 1.15rem;
+}
+
+.seerrSeason-heading span {
+    padding: 0.2rem 0.45rem;
+    border-radius: 1rem;
+    background: #111827;
+    color: #c7c7c7 !important;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.seerrSeason-status {
+    padding: 0.25rem 0.55rem;
+    border: 1px solid #69758a;
+    border-radius: 1rem;
+    color: #d0d7e2 !important;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.seerrSeason-status-available {
+    border-color: #45c98a;
+    color: #a6f3cd !important;
+}
+
+.seerrSeason-status-requested,
+.seerrSeason-status-approved,
+.seerrSeason-status-partially-available {
+    border-color: #7979ff;
+    color: #c8c8ff !important;
+}
+
+.seerrSeason-chevron {
+    font-size: 1.4rem;
+    transition: transform 0.2s ease;
+}
+
+.seerrSeason-summary[aria-expanded="true"] .seerrSeason-chevron {
+    transform: rotate(180deg);
+}
+
+.seerrSeason-details {
+    padding: 0 1rem 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.seerrSeason-details > p {
+    margin: 0.9rem 0;
+    color: #d0d7e2 !important;
+    line-height: 1.5;
+}
+
+.seerrSeason-confirm {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.seerrSeason-confirm > div {
+    display: flex;
+    gap: 0.5rem;
 }
 
 .seerrRequestList {
@@ -224,5 +509,55 @@
 
     .seerrResults {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .seerrBackLink {
+        margin-right: 1rem;
+        margin-left: 1rem;
+    }
+
+    .seerrDetailHero {
+        min-height: 0;
+    }
+
+    .seerrDetailHero-content {
+        padding: 2rem 1rem 1.5rem;
+        gap: 1.25rem;
+        grid-template-columns: 1fr;
+    }
+
+    .seerrDetailHero-poster {
+        width: min(52vw, 12rem);
+        margin: 0 auto;
+    }
+
+    .seerrDetailHero-copy {
+        text-align: center;
+    }
+
+    .seerrDetailHero-copy h1 {
+        font-size: 2rem;
+    }
+
+    .seerrDetailPage-content > .seerrNotice,
+    .seerrSeasons {
+        width: calc(100% - 2rem);
+    }
+
+    .seerrSeason-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .seerrSeason-status {
+        max-width: 7rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .seerrSeason-confirm {
+        align-items: stretch;
+        flex-direction: column;
     }
 }

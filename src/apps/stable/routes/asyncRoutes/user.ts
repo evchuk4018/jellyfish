@@ -5,6 +5,7 @@ export const ASYNC_USER_ROUTES: AsyncRoute[] = [
     { path: 'quickconnect', page: 'quickConnect' },
     { path: 'search', page: 'search' },
     { path: 'discover', page: 'discover' },
+    { path: 'discover/:mediaType/:mediaId', page: 'discoverDetail' },
     { path: 'requests', page: 'requests' },
     { path: 'userprofile', page: 'user/userprofile' }
 ];

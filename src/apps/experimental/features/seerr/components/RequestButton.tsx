@@ -20,7 +20,7 @@ const RequestButton: FC<RequestButtonProps> = ({
                 className='seerrRequestButton seerrRequestButton-complete'
                 disabled
             >
-                ✓ Available
+                Available
             </button>
         );
     }
@@ -32,7 +32,7 @@ const RequestButton: FC<RequestButtonProps> = ({
                 className='seerrRequestButton seerrRequestButton-complete'
                 disabled
             >
-                ✓ {requestStatus === 1 ? 'Requested' : 'Approved'}
+                {requestStatus === 1 ? 'Requested' : 'Approved'}
             </button>
         );
     }
@@ -44,7 +44,7 @@ const RequestButton: FC<RequestButtonProps> = ({
             onClick={onClick}
             disabled={isSubmitting}
         >
-            {isSubmitting ? 'Requesting…' : '+ Request'}
+            {isSubmitting ? 'Requesting...' : '+ Request'}
         </button>
     );
 };

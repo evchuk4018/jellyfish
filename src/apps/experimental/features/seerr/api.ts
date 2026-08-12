@@ -6,7 +6,9 @@ import { ServerConnections } from 'lib/jellyfin-apiclient';
 
 import type {
     SeerrDiscoverResponse,
+    SeerrMediaDetail,
     SeerrMediaType,
+    SeerrRequestInput,
     SeerrRequestsResponse
 } from './types';
 import { selectSeerrAuthToken } from './auth';
@@ -14,12 +16,6 @@ import { selectSeerrAuthToken } from './auth';
 const SEERR_QUERY_KEY = 'seerr';
 const DEFAULT_BRIDGE_URL = '/music/api/seerr';
 const REQUEST_TIMEOUT_MS = 15_000;
-
-type RequestInput = {
-    mediaType: SeerrMediaType;
-    mediaId: number;
-    tvdbId?: number;
-};
 
 const getBridgeUrl = (configuredUrl?: string) => (
     (configuredUrl || DEFAULT_BRIDGE_URL).replace(/\/$/, '')
@@ -129,6 +125,27 @@ export const useSeerrRequests = () => {
     });
 };
 
+export const useSeerrMediaDetail = (
+    mediaType: SeerrMediaType | undefined,
+    mediaId: number | undefined
+) => {
+    const { __legacyApiClient__ } = useApi();
+    const webConfig = useWebConfig();
+    const bridgeUrl = getBridgeUrl(webConfig.seerrBridgeUrl);
+
+    return useQuery({
+        queryKey: [ SEERR_QUERY_KEY, 'media', bridgeUrl, mediaType, mediaId ],
+        queryFn: () => requestBridge<SeerrMediaDetail>(
+            bridgeUrl,
+            requireToken(__legacyApiClient__),
+            `/media/${mediaType}/${mediaId}`
+        ),
+        enabled: Boolean(mediaType && mediaId),
+        retry: false,
+        staleTime: 60_000
+    });
+};
+
 export const useCreateSeerrRequest = () => {
     const { __legacyApiClient__ } = useApi();
     const webConfig = useWebConfig();
@@ -136,7 +153,7 @@ export const useCreateSeerrRequest = () => {
     const bridgeUrl = getBridgeUrl(webConfig.seerrBridgeUrl);
 
     return useMutation({
-        mutationFn: async (input: RequestInput) => {
+        mutationFn: async (input: SeerrRequestInput) => {
             return requestBridge<{ id: number }>(
                 bridgeUrl,
                 requireToken(__legacyApiClient__),
