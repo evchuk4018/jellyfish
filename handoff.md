@@ -43,7 +43,7 @@ Previous deployed fixes:
   removed the token-dependent query disable, added explicit query states, and
   added redacted client diagnostics.
 
-Current fix:
+Current fix (`97d5a9eea1`):
 
 - Replaces theme-dependent MUI typography, alerts, cards, and request buttons
   with semantic HTML and explicit Seerr-scoped colors.
@@ -55,21 +55,31 @@ Current fix:
 - Keeps MUI only for the Discover search input/button, which are the controls
   already proven visible in the supplied screenshots.
 
-## Verification and deployment checklist
+## Verification and deployment status
 
-Before considering this complete:
+- `npm test -- --run`: 166 tests passed.
+- Focused ESLint for all changed TypeScript/React files: passed.
+- Full-repository ESLint still reports two pre-existing errors in
+  `src/components/playback/playbackDebug.js`; the Seerr patch adds no lint
+  errors.
+- `npm run build:check`: passed.
+- `npm run stylelint`: passed.
+- `npm run build:production`: passed with only the repository's existing
+  bundle-size and stale Browserslist warnings.
+- Commit `97d5a9eea1` was pushed to both `main` and `custom-ui`.
+- `homelab` rebuilt and deployed that commit. `media-jellyfin` is healthy, the
+  served HTML returns HTTP 200 with `Cache-Control: no-cache`, and the served
+  hashed Discover JavaScript/CSS contain the new status and card code.
+- A post-deploy probe using the most recent Safari-iPhone Jellyfin session
+  returned CORS preflight 204, Discover HTTP 200 with 14 `Rick` results, and My
+  Requests HTTP 200 with two requests. The token was not printed or stored.
+- The migration runner completed and the migration check reports both
+  migrations applied. The app web, Postgres, and worker containers are healthy.
 
-1. Run the full test suite, ESLint, TypeScript check, stylesheet lint, and the
-   production build.
-2. Commit and push the result to both `main` and `custom-ui`.
-3. Rebuild the Jellyfin custom UI on `homelab` and confirm the served revision
-   and new Discover bundle contain the visible Seerr status strings.
-4. Apply pending database migrations and run the migration check, even though
-   this patch has no database changes.
-5. Ask the user to reopen Discover. The page must now show at least one of:
-   `Loading Seerr results…`, `N results from Seerr`, `No movies or TV shows
-   found.`, or a concrete error. A completely blank state is no longer a valid
-   render path.
+The remaining check requires the user's iPhone: reopen Discover. The page must
+now show at least one of `Loading Seerr results…`, `N results from Seerr`, `No
+movies or TV shows found.`, or a concrete error. A completely blank state is no
+longer a valid render path.
 
 ## If the user still cannot load results
 
