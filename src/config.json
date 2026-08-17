@@ -1,7 +1,7 @@
 {
   "includeCorsCredentials": false,
   "multiserver": false,
-  "seerrBridgeUrl": "https://homelab.tail861ffd.ts.net/music/api/seerr",
+  "seerrBridgeUrl": "https://music.wowzerbowser.xyz/api/seerr",
   "themes": [
     {
       "name": "Apple TV",
