@@ -25,30 +25,28 @@ import { getConfigurationApi } from '@jellyfin/sdk/lib/utils/api/configuration-a
 import { queryClient } from 'utils/query/queryClient';
 import { ActionData } from 'types/actionData';
 
-/* eslint-disable sonarjs/no-clear-text-protocols -- Private homelab services intentionally use HTTP. */
 const MEDIA_STACK_LINKS = [
     {
         label: 'Jellyseerr (request media)',
-        href: 'http://homelab.tail861ffd.ts.net:5055'
+        href: 'https://jellyseerr.wowzerbowser.xyz'
     },
     {
         label: 'Prowlarr (add torrent/indexer providers)',
-        href: 'http://homelab.tail861ffd.ts.net:9696'
+        href: 'https://prowlarr.wowzerbowser.xyz'
     },
     {
         label: 'qBittorrent (downloads)',
-        href: 'http://homelab.tail861ffd.ts.net:8080'
+        href: 'https://qb.wowzerbowser.xyz'
     },
     {
         label: 'Radarr (movies)',
-        href: 'http://homelab.tail861ffd.ts.net:7878'
+        href: 'https://radarr.wowzerbowser.xyz'
     },
     {
         label: 'Sonarr (TV)',
-        href: 'http://homelab.tail861ffd.ts.net:8989'
+        href: 'https://sonarr.wowzerbowser.xyz'
     }
 ] as const;
-/* eslint-enable sonarjs/no-clear-text-protocols */
 
 export const action = async ({ request }: ActionFunctionArgs) => {
     const api = ServerConnections.getCurrentApi();
